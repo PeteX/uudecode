@@ -1,5 +1,7 @@
 use std::{
-    io::{Write, read_to_string, stdin, stdout},
+    env,
+    fs::File,
+    io::{Write, read_to_string, BufWriter},
     sync::LazyLock,
 };
 
@@ -14,14 +16,16 @@ fn byte_value(c: u8) -> anyhow::Result<u8> {
     }
 }
 
-fn decode() -> anyhow::Result<()> {
+fn decode(input_file: &str, output_file: &str) -> anyhow::Result<()> {
     static START_LINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^begin \d{3} ").unwrap());
-    let text = read_to_string(stdin())?;
+    let text = read_to_string(File::open(input_file)?)?;
+    let output = File::create(output_file)?;
+    let mut writer = BufWriter::new(output);
     let mut reading_data = false;
     for line in text.lines() {
         if reading_data {
             if line == "end" {
-                stdout().flush()?;
+                writer.flush()?;
                 return Ok(());
             }
 
@@ -43,7 +47,7 @@ fn decode() -> anyhow::Result<()> {
                     bits += 6;
                 }
                 bits -= 8;
-                stdout()
+                writer
                     .write_all(&[(acc >> bits & 0xff).try_into().unwrap()])?;
             }
         } else if START_LINE.is_match(line) {
@@ -59,7 +63,17 @@ fn decode() -> anyhow::Result<()> {
 }
 
 fn main() {
-    match decode() {
+    let args: Vec<String> = env::args().collect();
+    
+    if args.len() != 3 {
+        eprintln!("uudecode: usage: {} <input_file> <output_file>", args[0]);
+        return;
+    }
+    
+    let input_file = &args[1];
+    let output_file = &args[2];
+    
+    match decode(input_file, output_file) {
         Err(e) => eprintln!("uudecode: {}", e),
         _ => {}
     }
