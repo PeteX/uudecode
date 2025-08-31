@@ -16,12 +16,12 @@ fn byte_value(c: u8) -> anyhow::Result<u8> {
 
 fn decode() -> anyhow::Result<()> {
     static START_LINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^begin \d{3} ").unwrap());
-    let text = read_to_string(stdin()).unwrap();
+    let text = read_to_string(stdin())?;
     let mut reading_data = false;
     for line in text.lines() {
         if reading_data {
             if line == "end" {
-                stdout().flush().unwrap();
+                stdout().flush()?;
                 return Ok(());
             }
 
@@ -44,8 +44,7 @@ fn decode() -> anyhow::Result<()> {
                 }
                 bits -= 8;
                 stdout()
-                    .write_all(&[(acc >> bits & 0xff).try_into().unwrap()])
-                    .unwrap();
+                    .write_all(&[(acc >> bits & 0xff).try_into().unwrap()])?;
             }
         } else if START_LINE.is_match(line) {
             reading_data = true;
