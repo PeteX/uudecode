@@ -18,25 +18,25 @@ fn is_begin_line(line: &str) -> bool {
     if !line.starts_with("begin ") {
         return false;
     }
-    
-    let after_begin = &line[6..]; // Skip "begin "
+
+    let after_begin = &line[6..];
     if after_begin.len() < 4 {
-        return false; // Need at least 3 digits + space
+        return false; // Need at least three digits plus space.
     }
-    
-    // Check if next 3 characters are digits
+
+    // Check if next three characters are digits.
     let chars: Vec<char> = after_begin.chars().collect();
     if chars.len() < 4 {
         return false;
     }
-    
+
     for i in 0..3 {
         if !chars[i].is_ascii_digit() {
             return false;
         }
     }
-    
-    // Check if 4th character is a space
+
+    // Check the fourth character is a space.
     chars[3] == ' '
 }
 
