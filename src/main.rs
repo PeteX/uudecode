@@ -2,11 +2,9 @@ use std::{
     env,
     fs::{File, read_to_string},
     io::{BufWriter, Write},
-    sync::LazyLock,
 };
 
 use anyhow::bail;
-use regex::Regex;
 
 fn byte_value(c: u8) -> anyhow::Result<u8> {
     match c {
@@ -16,8 +14,33 @@ fn byte_value(c: u8) -> anyhow::Result<u8> {
     }
 }
 
+fn is_begin_line(line: &str) -> bool {
+    if !line.starts_with("begin ") {
+        return false;
+    }
+
+    let after_begin = &line[6..];
+    if after_begin.len() < 4 {
+        return false; // Need at least three digits plus space.
+    }
+
+    // Check if next three characters are digits.
+    let chars: Vec<char> = after_begin.chars().collect();
+    if chars.len() < 4 {
+        return false;
+    }
+
+    for i in 0..3 {
+        if !chars[i].is_ascii_digit() {
+            return false;
+        }
+    }
+
+    // Check the fourth character is a space.
+    chars[3] == ' '
+}
+
 fn decode(input_file: &str, output_file: &str) -> anyhow::Result<()> {
-    static START_LINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^begin \d{3} ").unwrap());
     let text = read_to_string(input_file)?;
     let output = File::create(output_file)?;
     let mut writer = BufWriter::new(output);
@@ -49,7 +72,7 @@ fn decode(input_file: &str, output_file: &str) -> anyhow::Result<()> {
                 bits -= 8;
                 writer.write_all(&[(acc >> bits & 0xff).try_into().unwrap()])?;
             }
-        } else if START_LINE.is_match(line) {
+        } else if is_begin_line(line) {
             reading_data = true;
         }
     }
